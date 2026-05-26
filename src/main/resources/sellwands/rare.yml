@@ -1,0 +1,26 @@
+multiplier: 1.5
+
+unlimited-uses-item:
+  max-stack-size: 1
+  material: "minecraft:blaze_rod"
+  name: "&b<tinycaps:'rare sellwand'>"
+  lore:
+    - "&8<tinycaps:'sell wand'>"
+    - ""
+    - "&b| &f<tinycaps:'tier'> &b3"
+    - "&b| &f<tinycaps:'multiplier'> &b<multi>x"
+    - ""
+    - "&b&lRIGHT CLICK A CONTAINER"
+
+limited-uses-item:
+  max-stack-size: 1
+  material: "minecraft:blaze_rod"
+  name: "&b<tinycaps:'rare sellwand'>"
+  lore:
+    - "&8<tinycaps:'sell wand'>"
+    - ""
+    - "&b| &f<tinycaps:'tier'> &b3"
+    - "&b| &f<tinycaps:'multiplier'> &b<multi>x"
+    - "&b| &f<tinycaps:'uses'> &b<uses>/<max_uses>"
+    - ""
+    - "&b&lRIGHT CLICK A CONTAINER"

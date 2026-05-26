@@ -1,0 +1,15 @@
+name: IncomeSell
+description: $description
+version: '${version}'
+
+main: dev.lyric.income.sell.IncomeSell
+api-version: '1.21.11'
+load: POSTWORLD
+
+authors: [ Lyric/Fusezion ]
+
+dependencies:
+  server:
+    ExcellentEconomy:
+      required: true
+      load: BEFORE
