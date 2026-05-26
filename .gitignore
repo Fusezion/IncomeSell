@@ -1,0 +1,22 @@
+# IntelliJ
+.idea/
+*.iml
+out/
+build/
+
+# Kotlin
+*.class
+*.kotlin_metadata
+
+# Gradle
+.gradle/
+**/build/
+!gradle-wrapper.jar
+gradle-app.setting
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
