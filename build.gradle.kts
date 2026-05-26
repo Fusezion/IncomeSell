@@ -27,6 +27,7 @@ kotlin {
 tasks {
 
 	shadowJar {
+		archiveClassifier = ""
 		relocate("dev.jorel.commandapi", "dev.lyric.income.sell.libs.commandapi")
 	}
 
