@@ -10,8 +10,8 @@ class SellResult {
 	// --------------------------------------------------
 	//region Transaction Fold Region
 
-	private val transactions: MutableMap<String, Double> = mutableMapOf()
-	private val itemTransactions: MutableMap<ItemStackKey, ItemTransaction> = mutableMapOf()
+	private var transactions: MutableMap<String, Double> = mutableMapOf()
+	private var itemTransactions: MutableMap<ItemStackKey, ItemTransaction> = mutableMapOf()
 
 	fun recordTransaction(providerKey: String, amount: Double) {
 		if (!isValidProvider(providerKey)) return
@@ -60,8 +60,8 @@ class SellResult {
 	//region Multiplier Fold Region
 
 	private var globalMultiplier: Float = 1f
-	private val providerMultipliers: MutableMap<String, Float> = mutableMapOf()
-	private val providerSpecificMultipliers: MutableMap<String, Float> = mutableMapOf()
+	private var providerMultipliers: MutableMap<String, Float> = mutableMapOf()
+	private var providerSpecificMultipliers: MutableMap<String, Float> = mutableMapOf()
 
 	fun editGlobalMultiplier(multiplier: Float, overwrite: Boolean = false) {
 		globalMultiplier = if (overwrite) multiplier else globalMultiplier * multiplier
@@ -118,6 +118,16 @@ class SellResult {
 		val item = itemStack.clone()
 		item.amount = 0
 		return ItemStackKey(item)
+	}
+
+	internal fun copy(): SellResult {
+		val copy = SellResult()
+		copy.transactions = transactions.toMutableMap()
+		copy.itemTransactions = itemTransactions.toMutableMap()
+		copy.globalMultiplier = globalMultiplier
+		copy.providerMultipliers = providerMultipliers.toMutableMap()
+		copy.providerSpecificMultipliers = providerSpecificMultipliers.toMutableMap()
+		return copy
 	}
 
 	//endregion
