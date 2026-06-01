@@ -1,163 +1,82 @@
 package dev.lyric.income.sell.api
 
-import dev.lyric.income.sell.api.provider.SellProvider
-import io.papermc.paper.persistence.PersistentDataContainerView
 import org.bukkit.NamespacedKey
-import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
-import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
 
 object IncomeSellAPI {
 
-	// ---------------------------------------------------------
-	// Provider Registry
-	// ---------------------------------------------------------
+	private val SELL_ACTION_KEY = NamespacedKey.fromString("incomesell:sell_actions")!!
+	private val PROVIDER_KEY_REGEX = Regex("[a-z0-9._-]+")
 
-	private val providers = mutableMapOf<String, SellProvider>()
-
-	@JvmStatic
-	fun registerProvider(provider: SellProvider) {
-		providers[provider.identifier] = provider
-	}
-
-	@JvmStatic
-	fun hasProvider(key: String) = providers.containsKey(key)
-
-	@JvmStatic
-	fun getProvider(identifier: String): SellProvider? = providers[identifier]
-
-	// ---------------------------------------------------------
-	// PDC Keys
-	// ---------------------------------------------------------
-
-	private val sellActionsKey = NamespacedKey.fromString("incomesell:sell_actions")!!
-
-	// ---------------------------------------------------------
-	// Handle Sell Actions
-	// ---------------------------------------------------------
-
-	@JvmStatic
-	fun hasSellActions(item: ItemStack) =
-		item.persistentDataContainer.has(sellActionsKey, PersistentDataType.TAG_CONTAINER)
-
-	@JvmStatic
-	fun addSellAction(
-		item: ItemStack,
-		providerId: String,
-		amount: Double,
-		argument: String?,
-		overwrite: Boolean
-	): ItemStack {
-		val itemMeta = item.itemMeta ?: return item
-		val rootPDC = itemMeta.persistentDataContainer
-
-		val section = getOrCreateSection(rootPDC)
-		val key =
-			if (argument.isNullOrBlank()) providerId.lowercase() else "${providerId.lowercase()}/${argument.lowercase()}"
-		if (overwrite) {
-			section[key] = amount
-		} else {
-			section[key] = amount.plus(section.getOrDefault(key, 0.0))
-		}
-		saveSection(rootPDC, section)
-		item.itemMeta = itemMeta
-		return item
-	}
-
-	fun addSellAction(
-		item: ItemStack,
-		providerId: String,
-		amount: Double,
-		overwrite: Boolean
-	): ItemStack {
-		return addSellAction(item, providerId, amount, argument = null, overwrite = overwrite)
-	}
-
-	fun addSellAction(
-		item: ItemStack,
-		providerId: String,
-		amount: Double,
-		argument: String
-	): ItemStack {
-		return addSellAction(item, providerId, amount, argument = argument, overwrite = false)
-	}
-
-	fun addSellAction(
-		item: ItemStack,
-		providerId: String,
-		amount: Double
-	): ItemStack {
-		return addSellAction(item, providerId, amount, argument = null, overwrite = false)
-	}
-
+	/**
+	 * Creates an empty unmodified sell result perfect for usage outside of selling items.
+	 */
 	@JvmStatic
 	fun createEmptySellResult(): SellResult = SellResult()
 
+	/**
+	 * Checks whether the provided [item] has the required information about sell actions attached.
+	 */
 	@JvmStatic
-	fun sellItem(item: ItemStack, result: SellResult): SellResult {
-		if (!item.isEmpty && hasSellActions(item)) {
-			recordItemTransaction(item.clone(), result)
-			item.amount = 0
+	fun hasSellActions(item: ItemStack): Boolean {
+		return item.persistentDataContainer.has(SELL_ACTION_KEY, PersistentDataType.TAG_CONTAINER)
+				&& getSellActions(item).isNotEmpty()
+	}
+
+	/**
+	 * Adds a sell action to the persistent data container of the [item].
+	 *
+	 * @throws IllegalArgumentException if [item] is empty see [ItemStack.isEmpty]
+	 * @throws IllegalArgumentException if [amount] is less than or equal to 0
+	 * @throws IllegalArgumentException if [providerId] does not match the regex `[a-z0-9._-]`
+	 * @throws IllegalArgumentException if [argument] is not null and does not match the regex `[a-z0-9._-]`
+	 */
+	@JvmStatic
+	fun addSellAction(item: ItemStack, providerId: String, amount: Double, argument: String? = null, overwrite: Boolean = false): ItemStack {
+		require(!item.isEmpty) { "Provided itemstack cannot be empty" }
+		require(amount > 0) { "Amount must not be less than or equal to 0" }
+		require(providerId.matches(PROVIDER_KEY_REGEX)) { "provider id does not match the regex [a-z0-9._-]" }
+		if (argument != null) require(argument.matches(PROVIDER_KEY_REGEX)) { "argument does not match the regex [a-z0-9._-]" }
+
+		val sellActions = getSellActions(item)
+		val providerId = providerId.lowercase()
+		val argument = argument?.lowercase()
+		val key = if (argument.isNullOrBlank()) providerId else "${providerId}/${argument}"
+		sellActions[key] = if (overwrite) amount else amount.plus(sellActions.getOrDefault(key, 0.0))
+		setSellActions(item, sellActions)
+		return item
+	}
+
+	// TODO: add documentation notes for later use
+	/**
+	 * Gets the sell-actions of the provided [item]
+	 */
+	@JvmStatic
+	fun getSellActions(item: ItemStack): MutableMap<String, Double> {
+		val sellActions = mutableMapOf<String, Double>()
+		val dataContainer = item.persistentDataContainer
+		val sellActionsContainer = dataContainer.get(SELL_ACTION_KEY, PersistentDataType.TAG_CONTAINER) ?: return sellActions
+		for (key in sellActionsContainer.keys) {
+			if (!sellActionsContainer.has(key, PersistentDataType.DOUBLE)) continue
+			val amount = sellActionsContainer.get(key, PersistentDataType.DOUBLE) ?: continue
+			sellActions[key.key] = amount
 		}
-		return result
+		return sellActions
 	}
 
+	/**
+	 * Overwrites the sell-actions of the provided [item] to everything inside the [sellActions] map
+	 */
 	@JvmStatic
-	fun sellItem(item: ItemStack): SellResult {
-		return sellItem(item, createEmptySellResult())
-	}
-
-	@JvmStatic
-	fun sellInventory(inventory: Inventory, result: SellResult): SellResult {
-		for (item in inventory.iterator()) {
-			if (item != null && !item.isEmpty && hasSellActions(item)) {
-				recordItemTransaction(item.clone(), result)
-				item.amount = 0
+	fun setSellActions(item: ItemStack, sellActions: Map<String, Double>) {
+		item.editPersistentDataContainer { persistentDataContainer ->
+			val sellActionPDC = persistentDataContainer.adapterContext.newPersistentDataContainer()
+			for ((sellKey, amount) in sellActions) {
+				val sellActionKey = NamespacedKey.fromString("incomesell:$sellKey") ?: continue
+				sellActionPDC.set(sellActionKey, PersistentDataType.DOUBLE, amount)
 			}
 		}
-		return result
-	}
-
-	@JvmStatic
-	fun sellInventory(inventory: Inventory): SellResult {
-		return sellInventory(inventory, createEmptySellResult())
-	}
-
-	@JvmStatic
-	fun readSellActions(item: ItemStack): Map<String, Double> = getOrCreateSection(item.persistentDataContainer)
-
-	private fun recordItemTransaction(item: ItemStack, sellResult: SellResult) {
-		val actions = readSellActions(item)
-		if (actions.isEmpty()) return
-		sellResult.recordItemTransaction(item, item.amount, actions)
-	}
-
-	// ---------------------------------------------------------
-	// Check sellable & add sell actions
-	// ---------------------------------------------------------
-
-	private fun getOrCreateSection(container: PersistentDataContainerView): MutableMap<String, Double> {
-		return getSection(container)?.toMutableMap() ?: linkedMapOf()
-	}
-
-	private fun getSection(container: PersistentDataContainerView): Map<String, Double>? {
-		val sellActions = container.get(sellActionsKey, PersistentDataType.TAG_CONTAINER) ?: return null
-		val resultMap = linkedMapOf<String, Double>()
-		for (key in sellActions.keys) {
-			val amount = sellActions.get(key, PersistentDataType.DOUBLE) ?: continue
-			resultMap[key.key] = amount
-		}
-		return resultMap
-	}
-
-	private fun saveSection(container: PersistentDataContainer, section: Map<String, Double>) {
-		val sellActions = container.adapterContext.newPersistentDataContainer()
-		for ((id, amount) in section) {
-			val key = NamespacedKey.fromString("incomesell:$id")!!
-			sellActions.set(key, PersistentDataType.DOUBLE, amount)
-		}
-		container.set(sellActionsKey, PersistentDataType.TAG_CONTAINER, sellActions)
 	}
 
 }
