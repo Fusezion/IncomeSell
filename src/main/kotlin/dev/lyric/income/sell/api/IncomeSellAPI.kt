@@ -1,6 +1,8 @@
 package dev.lyric.income.sell.api
 
+import dev.lyric.income.sell.api.events.PlayerSellEvent
 import org.bukkit.NamespacedKey
+import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 
@@ -48,7 +50,6 @@ object IncomeSellAPI {
 		return item
 	}
 
-	// TODO: add documentation notes for later use
 	/**
 	 * Gets the sell-actions of the provided [item]
 	 */
@@ -77,6 +78,47 @@ object IncomeSellAPI {
 				sellActionPDC.set(sellActionKey, PersistentDataType.DOUBLE, amount)
 			}
 		}
+	}
+
+	@JvmStatic
+	fun payoutTransactions(player: Player, sellResult: SellResult): Boolean {
+		val wasCancelled = !PlayerSellEvent(player, sellResult).callEvent()
+		if (wasCancelled) return false
+		val validTransactions = sellResult.getTransactions().filter { isValidProvider(it.key) }.toMutableMap()
+		val itemTransactions = sellResult.getItemTransactions().values
+		for (itemTransaction in itemTransactions) {
+			for ((providerKey, amount) in itemTransaction.transactions) {
+				if (!isValidProvider(providerKey)) continue
+				validTransactions.merge(providerKey, amount, Double::plus)
+			}
+		}
+		if (validTransactions.isEmpty()) return false
+		var paidOutAnything = false
+		for ((providerKey, amount) in validTransactions) {
+			if (!isValidProvider(providerKey)) continue
+			val (providerId, argument) = getProviderAndArgument(providerKey)
+			val provider = SellProviderRegistry.getProvider(providerId) ?: continue
+			val multiplier = sellResult.calculateMultiplier(providerKey)
+			val finalAmount = amount * multiplier
+			provider.handleSell(player, argument, finalAmount)
+			if (!paidOutAnything) paidOutAnything = true
+		}
+		return paidOutAnything
+	}
+
+	@JvmStatic
+	internal fun getProviderAndArgument(providerKey: String): Pair<String, String?> {
+		val parts = providerKey.split("/", limit = 2)
+		val provider = parts[0]
+		val argument = parts.getOrNull(1)
+		return Pair(provider, argument)
+	}
+
+	@JvmStatic
+	internal fun isValidProvider(providerKey: String): Boolean {
+		val (providerId, argument) = getProviderAndArgument(providerKey)
+		val provider = SellProviderRegistry.getProvider(providerId) ?: return false
+		return argument == null || provider.isValidArgument(argument)
 	}
 
 }
