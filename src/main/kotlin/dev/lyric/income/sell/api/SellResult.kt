@@ -1,5 +1,7 @@
 package dev.lyric.income.sell.api
 
+import dev.lyric.income.sell.api.IncomeSellAPI.getProviderAndArgument
+import dev.lyric.income.sell.api.IncomeSellAPI.isValidProvider
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 
@@ -99,19 +101,6 @@ class SellResult {
 
 	fun getItemTransactions() = itemTransactions.toMap()
 
-	private fun getProviderAndArgument(providerKey: String): Pair<String, String?> {
-		val parts = providerKey.split("/", limit = 2)
-		val provider = parts[0]
-		val argument = parts.getOrNull(1)
-		return Pair(provider, argument)
-	}
-
-	private fun isValidProvider(providerKey: String): Boolean {
-		val (providerId, argument) = getProviderAndArgument(providerKey)
-		val provider = SellProviderRegistry.getProvider(providerId) ?: return false
-		return argument == null || provider.isValidArgument(argument)
-	}
-
 	data class ItemStackKey(val itemStack: ItemStack)
 
 	fun createItemStackKey(itemStack: ItemStack): ItemStackKey {
@@ -120,7 +109,7 @@ class SellResult {
 		return ItemStackKey(item)
 	}
 
-	internal fun copy(): SellResult {
+	fun copy(): SellResult {
 		val copy = SellResult()
 		copy.transactions = transactions.toMutableMap()
 		copy.itemTransactions = itemTransactions.toMutableMap()
