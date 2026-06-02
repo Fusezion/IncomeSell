@@ -4,6 +4,9 @@ import dev.lyric.income.sell.api.IncomeSellAPI.getProviderAndArgument
 import dev.lyric.income.sell.api.IncomeSellAPI.isValidProvider
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.iterator
 
 class SellResult {
 
@@ -81,7 +84,7 @@ class SellResult {
 		else providerSpecificMultipliers.merge(providerKey, multiplier, Float::times)
 	}
 
-	private fun calculateMultiplier(providerKey: String): Float {
+	internal fun calculateMultiplier(providerKey: String): Float {
 		if (!isValidProvider(providerKey)) return 0f
 		var multiplier = globalMultiplier
 		multiplier *= providerMultipliers.getOrDefault(providerKey, 1f)
@@ -100,6 +103,25 @@ class SellResult {
 	fun getTransactions() = transactions.toMap()
 
 	fun getItemTransactions() = itemTransactions.toMap()
+
+	/**
+	 * Returns the merged transaction history between normal transactions and item transactions.
+	 * This is used in handling the payout but is also a semi-safe way of validating if the sell-result
+	 * had valid information for payouts.
+	 *
+	 * **NOTE:** this means you should not call [recordTransaction] and [recordItemTransaction] together when recording items
+	 */
+	fun getMergedTransactions(): Map<String, Double> {
+		val validTransactions = getTransactions().filter { isValidProvider(it.key) }.toMutableMap()
+		val itemTransactions = getItemTransactions().values
+		for (itemTransaction in itemTransactions) {
+			for ((providerKey, amount) in itemTransaction.transactions) {
+				if (!isValidProvider(providerKey)) continue
+				validTransactions.merge(providerKey, amount, Double::plus)
+			}
+		}
+		return validTransactions
+	}
 
 	data class ItemStackKey(val itemStack: ItemStack)
 
