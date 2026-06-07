@@ -80,7 +80,7 @@ object ConfigManager {
 	// =======[  Load/Reload Config Files  ]=======
 	// =======[                            ]=======
 
-	fun loadAllConfigFiles() {
+	fun loadAllConfigEntries() {
 		this.fileConfigs.values.forEach(FileConfigEntry<*>::load)
 		this.folderConfigs.values.forEach(FolderConfigEntry<*>::load)
 	}
