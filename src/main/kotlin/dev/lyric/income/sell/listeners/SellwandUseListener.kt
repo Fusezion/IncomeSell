@@ -1,13 +1,14 @@
 package dev.lyric.income.sell.listeners
 
+import dev.lyric.income.sell.IncomeSell
 import dev.lyric.income.sell.api.IncomeSellAPI
 import dev.lyric.income.sell.config.ConfigManager
 import dev.lyric.income.sell.config.data.SellwandConfig
-import dev.lyric.income.sell.utils.AdventureUtils.component
+import dev.lyric.income.sell.messages.MessageTagResolvers
+import dev.lyric.income.sell.messages.Messages
 import dev.lyric.income.sell.utils.PDCKey
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.datacomponent.item.ItemLore
-import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import org.bukkit.block.Container
@@ -17,8 +18,12 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import java.text.NumberFormat
 
 class SellwandUseListener : Listener {
+
+	val messages: Messages
+		get() = IncomeSell.messages
 
 	@EventHandler
 	fun onRightClick(event: PlayerInteractEvent) {
@@ -37,16 +42,23 @@ class SellwandUseListener : Listener {
 		val type = sellWandPDC.get(PDCKey.type, PersistentDataType.STRING)!!
 		if (!ConfigManager.isValidFolderConfigChild("sellwands/$type")) return
 		val sellwandConfig = ConfigManager.getConfigFromFolder<SellwandConfig>("sellwands", type)
-		val multiplier = sellwandConfig.multiplier
 
-		val sellResult = IncomeSellAPI.sellInventory(containerInventory)
-		if (sellResult.isEmpty()) {
-			player.sendActionBar("There was nothing in the container to sell".component(NamedTextColor.RED))
+		val sellResult = IncomeSellAPI.createEmptySellResult()
+		sellResult.recordInventoryTransaction(containerInventory)
+		if (!sellResult.hasTransactions()) {
+			player.sendActionBar(messages.resolve { bulkSell.nothingSold })
 			return
 		}
-		sellResult.editGlobalMultiplier(multiplier)
-		if (!sellResult.handlePayout(player)) return
-		player.sendMessage(sellResult.getSoldMessage())
+		sellResult.editGlobalMultiplier(sellwandConfig.multiplier)
+		if (!IncomeSellAPI.payoutTransactions(player, sellResult)) return
+		val resolvers = arrayOf(
+			MessageTagResolvers.numberFormat("total_items", sellResult.getItemTransactions().sumOf { it.amountSold }),
+			MessageTagResolvers.formatTotalCurrency(sellResult, "currency_breakdown", NumberFormat.Style.LONG),
+			MessageTagResolvers.formatTotalCurrency(sellResult, "currency_breakdown_short", NumberFormat.Style.SHORT),
+			MessageTagResolvers.breakdownTag(sellResult)
+		)
+		player.sendMessage { messages.resolve( { bulkSell.sellMessage }, *resolvers) }
+		containerInventory.filterNotNull().filter(IncomeSellAPI::hasSellActions).forEach { it.amount = 0 }
 
 		if (sellWandPDC.has(PDCKey.uses) && sellWandPDC.has(PDCKey.maxUses)) {
 			val remainingUses = sellWandPDC.get(PDCKey.uses, PersistentDataType.INTEGER) ?: return
