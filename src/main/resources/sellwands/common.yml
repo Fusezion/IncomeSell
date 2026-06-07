@@ -1,4 +1,5 @@
 multiplier: 0.5
+identifier: common
 
 unlimited-uses-item:
   max-stack-size: 1

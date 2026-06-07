@@ -1,4 +1,5 @@
 multiplier: 1.5
+identifier: rare
 
 unlimited-uses-item:
   max-stack-size: 1

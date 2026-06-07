@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack
 @Serializable
 data class SellwandConfig(
 	val multiplier: Float,
+	val identifier: String,
 	@SerialName("unlimited-uses-item")
 	val unlimitedUsesItem: ItemStackConfig,
 	@SerialName("limited-uses-item")

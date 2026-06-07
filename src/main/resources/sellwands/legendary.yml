@@ -1,4 +1,5 @@
 multiplier: 2.5
+identifier: legendary
 
 unlimited-uses-item:
   max-stack-size: 1
