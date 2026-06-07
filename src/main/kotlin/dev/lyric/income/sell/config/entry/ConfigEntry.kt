@@ -8,6 +8,10 @@ interface ConfigEntry<T : Any> {
 	val serializer: KSerializer<T>
 	val default: T?
 		get() = null
+	val onSave: (T) -> Unit
+		get() = {}
+	val onLoad: (T) -> Unit
+		get() = {}
 
 	fun load()
 	fun save()

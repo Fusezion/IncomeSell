@@ -9,6 +9,8 @@ open class FileConfigEntry<T : Any>(
 	override val path: String,
 	override val serializer: KSerializer<T>,
 	override val default: T? = null,
+	override val onLoad: (T) -> Unit = {},
+	override val onSave: (T) -> Unit = {}
 ) : ConfigEntry<T> {
 
 	companion object {
@@ -28,14 +30,14 @@ open class FileConfigEntry<T : Any>(
 			} else error("Missing config file $path and no default value supplies.")
 		}
 		value = Yaml.decodeFromString(serializer, file.readText())
-		onLoad(value)
+		onLoad.invoke(value)
 	}
 
 	override fun save() {
 		val file = File(plugin.dataFolder, path)
 		file.parentFile.mkdirs()
 		file.writeText(Yaml.encodeToString(serializer, value))
-		onSave(value)
+		onSave.invoke(value)
 	}
 
 	fun get(): T = value

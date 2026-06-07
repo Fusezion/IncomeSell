@@ -8,7 +8,9 @@ import java.io.File
 open class FolderConfigEntry<T : Any>(
 	override val path: String,
 	override val serializer: KSerializer<T>,
-	private val internalFiles: List<String> = emptyList()
+	private val internalFiles: List<String> = emptyList(),
+	override val onSave: (T) -> Unit = {},
+	override val onLoad: (T) -> Unit = {},
 ) : ConfigEntry<T> {
 
 	companion object {
@@ -19,7 +21,7 @@ open class FolderConfigEntry<T : Any>(
 
 	operator fun get(file: String): T = values[file]!!
 
-	fun contains(file: String) = internalFiles.contains(file)
+	fun contains(file: String) = values.contains(file)
 
 	fun getFileKeys(): Set<String> = values.keys.toSet()
 
@@ -40,7 +42,7 @@ open class FolderConfigEntry<T : Any>(
 			val relativePath = folder.toPath().relativize(file.toPath()).toString().removeSuffix(".yml")
 			val serializedValue = Yaml.decodeFromString(serializer, file.readText())
 			values[relativePath] = serializedValue
-			onLoad(serializedValue)
+			onLoad.invoke(serializedValue)
 		}
 	}
 
@@ -51,7 +53,9 @@ open class FolderConfigEntry<T : Any>(
 	fun loadChild(child: String) {
 		val file = File(plugin.dataFolder, "$path/$child")
 		if (values[child] == null && !file.exists()) return
-		values[child] = Yaml.decodeFromString(serializer, file.readText())
+		val serializedValue = Yaml.decodeFromString(serializer, file.readText())
+		values[child] = serializedValue
+		onLoad.invoke(serializedValue)
 	}
 
 	fun saveChild(child: String) {
@@ -59,7 +63,7 @@ open class FolderConfigEntry<T : Any>(
 		val file = File(plugin.dataFolder, path)
 		file.parentFile.mkdirs()
 		file.writeText(Yaml.encodeToString(serializer, value))
-		onSave(value)
+		onSave.invoke(value)
 	}
 
 }
