@@ -77,6 +77,7 @@ object IncomeSellAPI {
 				val sellActionKey = NamespacedKey.fromString("incomesell:$sellKey") ?: continue
 				sellActionPDC.set(sellActionKey, PersistentDataType.DOUBLE, amount)
 			}
+			persistentDataContainer.set(SELL_ACTION_KEY, PersistentDataType.TAG_CONTAINER, sellActionPDC)
 		}
 	}
 
@@ -85,7 +86,7 @@ object IncomeSellAPI {
 		val wasCancelled = !PlayerSellEvent(player, sellResult).callEvent()
 		if (wasCancelled) return false
 		val validTransactions = sellResult.getTransactions().filter { isValidProvider(it.key) }.toMutableMap()
-		val itemTransactions = sellResult.getItemTransactions().values
+		val itemTransactions = sellResult.getItemTransactions()
 		for (itemTransaction in itemTransactions) {
 			for ((providerKey, amount) in itemTransaction.transactions) {
 				if (!isValidProvider(providerKey)) continue
