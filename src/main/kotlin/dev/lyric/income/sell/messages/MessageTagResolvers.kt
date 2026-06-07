@@ -40,12 +40,19 @@ object MessageTagResolvers {
 		return Placeholder.parsed(key, mappedCurrencies.reduce { acc, string -> "$acc $string" })
 	}
 
-	fun formatCurrencyMap(currencyMap: Map<String, Double>, key: String, numberStyle: NumberFormat.Style): TagResolver {
+	fun formatCurrencyMap(
+		sellResult: SellResult,
+		currencyMap: Map<String, Double>,
+		key: String,
+		numberStyle: NumberFormat.Style
+	): TagResolver {
 		val mappedCurrencies = currencyMap.mapNotNull { (providerKey, amount) ->
 			if (!IncomeSellAPI.isValidProvider(providerKey)) return@mapNotNull null
+			val multiplier = sellResult.calculateMultiplier(providerKey)
+			if (multiplier == 0f) return@mapNotNull null
 			val (providerId, argument) = getProviderAndArgument(providerKey)
 			val provider = SellProviderRegistry.getProvider(providerId) ?: return@mapNotNull null
-			return@mapNotNull provider.formatAmount((amount), argument, numberStyle)
+			return@mapNotNull provider.formatAmount((amount * multiplier), argument, numberStyle)
 		}.toList()
 		return Placeholder.parsed(key, mappedCurrencies.reduce { acc, string -> "$acc $string" })
 	}
@@ -106,8 +113,14 @@ object MessageTagResolvers {
 				val resolvers = arrayOf(
 					numberFormat("item_amount", itemTransaction.amountSold),
 					hoverableItem(itemTransaction.item),
-					formatCurrencyMap(itemTransaction.transactions, "currency_breakdown", NumberFormat.Style.LONG),
 					formatCurrencyMap(
+						sellResult,
+						itemTransaction.transactions,
+						"currency_breakdown",
+						NumberFormat.Style.LONG
+					),
+					formatCurrencyMap(
+						sellResult,
 						itemTransaction.transactions,
 						"currency_breakdown_short",
 						NumberFormat.Style.SHORT
