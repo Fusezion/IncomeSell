@@ -47,6 +47,11 @@ interface SellProvider {
 	fun handleSell(player: Player, argument: String?, amount: Double)
 
 	/**
+	 * Returns whether the provider is affected by global multiplier boost
+	 */
+	fun acceptsGlobalMultiplier(): Boolean = true
+
+	/**
 	 * Returns whether the provider and its arguments accept being modified by multipliers
 	 */
 	fun acceptsMultipliers(argument: String?): Boolean = true
