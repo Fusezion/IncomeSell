@@ -1,0 +1,24 @@
+inventory-name: "Place in items to sell!"
+
+shape:
+  - "         "
+  - "         "
+  - "         "
+  - "         "
+  - "         "
+  - "----@----"
+
+sell-action-slot: '@'
+
+items:
+  '-':
+    material: "minecraft:black_stained_glass_pane"
+    tooltip-display:
+      hide-tooltip: true
+  '@':
+    material: "minecraft:lime_stained_glass_pane"
+    name: "<#85f03e>&lSell All"
+    lore:
+      - "&7Place in items to sell"
+      - ""
+      - "<#62db12>→ &nClick to sell"
