@@ -2,6 +2,7 @@ package dev.lyric.income.sell.api
 
 import dev.lyric.income.sell.api.IncomeSellAPI.getProviderAndArgument
 import dev.lyric.income.sell.api.IncomeSellAPI.isValidProvider
+import net.kyori.adventure.text.Component
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import kotlin.collections.component1
@@ -16,7 +17,7 @@ class SellResult {
 	//region Transaction Fold Region
 
 	private var transactions: MutableMap<String, Double> = mutableMapOf()
-	private var itemTransactions: MutableMap<ItemStackKey, ItemTransaction> = mutableMapOf()
+	private var itemTransactions: MutableMap<Component, ItemTransaction> = mutableMapOf()
 
 	fun recordTransaction(providerKey: String, amount: Double) {
 		if (!isValidProvider(providerKey)) return
@@ -31,7 +32,7 @@ class SellResult {
 		val item = item.clone()
 		if (!isValidProvider(providerKey)) return
 		val itemAmount = itemAmount.coerceAtLeast(1)
-		val itemTransaction = itemTransactions.computeIfAbsent(createItemStackKey(item.clone())) { ItemTransaction(item) }
+		val itemTransaction = itemTransactions.computeIfAbsent(item.effectiveName()) { ItemTransaction(item) }
 		itemTransaction.amountSold += itemAmount
 		itemTransaction.transactions.merge(providerKey, (unitAmount * itemAmount), Double::plus)
 	}
@@ -39,7 +40,7 @@ class SellResult {
 	fun recordItemTransaction(item: ItemStack, itemAmount: Int, transactions: Map<String, Double>) {
 		val item = item.clone()
 		val itemAmount = itemAmount.coerceAtLeast(1)
-		val itemTransaction = itemTransactions.computeIfAbsent(createItemStackKey(item.clone())) { ItemTransaction(item) }
+		val itemTransaction = itemTransactions.computeIfAbsent(item.effectiveName()) { ItemTransaction(item) }
 		itemTransaction.amountSold += itemAmount
 		for ((providerKey, unitAmount) in transactions) {
 			if (!isValidProvider(providerKey)) continue
@@ -74,23 +75,44 @@ class SellResult {
 
 	fun editProviderMultiplier(providerKey: String, multiplier: Float, overwrite: Boolean = false) {
 		if (!isValidProvider(providerKey)) return
-		val (provider, argument) = getProviderAndArgument(providerKey)
+		val (providerId, argument) = getProviderAndArgument(providerKey)
+		val provider = SellProviderRegistry.getProvider(providerId) ?: return
+		if (!provider.acceptsMultipliers(argument)) return
 		if (argument == null) {
-			if (overwrite) providerMultipliers[provider] = multiplier
-			else providerMultipliers.merge(provider, multiplier, Float::times)
+			if (overwrite) {
+				providerMultipliers[providerId] = multiplier
+			} else {
+				providerMultipliers.merge(providerId, multiplier, Float::times)
+			}
 			return
 		}
-		if (overwrite) providerSpecificMultipliers[providerKey] = multiplier
-		else providerSpecificMultipliers.merge(providerKey, multiplier, Float::times)
+		if (overwrite) {
+			providerSpecificMultipliers[providerKey] = multiplier
+		} else {
+			providerSpecificMultipliers.merge(providerKey, multiplier, Float::times)
+		}
 	}
 
 	internal fun calculateMultiplier(providerKey: String): Float {
 		if (!isValidProvider(providerKey)) return 0f
-		var multiplier = globalMultiplier
-		multiplier *= providerMultipliers.getOrDefault(providerKey, 1f)
-		multiplier *= providerSpecificMultipliers.getOrDefault(providerKey, 1f)
+		val (providerId, argument) = getProviderAndArgument(providerKey)
+		val provider = SellProviderRegistry.getProvider(providerId) ?: return 0f
+		if (!provider.acceptsMultipliers(argument)) return 0f
+		var multiplier = 1f
+		if (provider.acceptsGlobalMultiplier())
+			multiplier *= globalMultiplier
+		if (provider.acceptsMultipliers(null))
+			multiplier *= providerMultipliers.getOrDefault(providerKey, 1f)
+		if (argument != null && provider.acceptsMultipliers(argument))
+			multiplier *= providerSpecificMultipliers.getOrDefault(providerKey, 1f)
 		return multiplier
 	}
+
+	fun getGlobalMultiplier() = globalMultiplier
+
+	fun getProviderSpecificMultipliers() = providerSpecificMultipliers.toMap()
+
+	fun getProviderMultipliers() = providerMultipliers.toMap()
 	//endregion
 
 	// --------------------------------------------------
@@ -98,11 +120,15 @@ class SellResult {
 	// --------------------------------------------------
 	//region Utility Fold Region
 
-	fun hasTransactions() = transactions.isNotEmpty() || (itemTransactions.isNotEmpty() && itemTransactions.values.any { it.transactions.isNotEmpty() })
+	fun hasMultipliers() = globalMultiplier != 1f || providerMultipliers.isNotEmpty() || providerSpecificMultipliers.isNotEmpty()
+
+	fun hasItemTransactions() = (itemTransactions.isNotEmpty() && itemTransactions.values.any { it.transactions.isNotEmpty() })
+
+	fun hasTransactions() = transactions.isNotEmpty() || hasItemTransactions()
 
 	fun getTransactions() = transactions.toMap()
 
-	fun getItemTransactions() = itemTransactions.toMap()
+	fun getItemTransactions() = itemTransactions.values.toList()
 
 	/**
 	 * Returns the merged transaction history between normal transactions and item transactions.
@@ -113,7 +139,7 @@ class SellResult {
 	 */
 	fun getMergedTransactions(): Map<String, Double> {
 		val validTransactions = getTransactions().filter { isValidProvider(it.key) }.toMutableMap()
-		val itemTransactions = getItemTransactions().values
+		val itemTransactions = getItemTransactions()
 		for (itemTransaction in itemTransactions) {
 			for ((providerKey, amount) in itemTransaction.transactions) {
 				if (!isValidProvider(providerKey)) continue
@@ -121,14 +147,6 @@ class SellResult {
 			}
 		}
 		return validTransactions
-	}
-
-	data class ItemStackKey(val itemStack: ItemStack)
-
-	fun createItemStackKey(itemStack: ItemStack): ItemStackKey {
-		val item = itemStack.clone()
-		item.amount = 0
-		return ItemStackKey(item)
 	}
 
 	fun copy(): SellResult {
