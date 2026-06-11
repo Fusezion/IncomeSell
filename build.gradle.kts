@@ -1,8 +1,9 @@
 plugins {
-	kotlin("jvm") version "2.3.21"
-	kotlin("plugin.serialization") version "2.3.21"
+	kotlin("jvm") version "2.4.0"
+	kotlin("plugin.serialization") version "2.4.0"
 	id("com.gradleup.shadow") version "9.4.1"
 	id("xyz.jpenilla.run-paper") version "3.0.2"
+	`maven-publish`
 }
 
 repositories {
@@ -18,6 +19,10 @@ dependencies {
 
 kotlin {
 	jvmToolchain(25)
+}
+
+java {
+	withSourcesJar()
 }
 
 tasks {
@@ -49,6 +54,15 @@ tasks {
 		val props = mapOf("version" to version, "description" to project.description)
 		filesMatching("paper-plugin.yml") {
 			expand(props)
+		}
+	}
+}
+
+publishing {
+	publications {
+		create<MavenPublication>("maven") {
+			artifact(tasks.shadowJar.get())
+			artifact(tasks.named("sourcesJar"))
 		}
 	}
 }
