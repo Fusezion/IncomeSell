@@ -1,5 +1,5 @@
 name: IncomeSell
-description: $description
+description: 'Main sell plugin for the IncomeMC Generator server'
 version: '${version}'
 
 main: dev.lyric.income.sell.IncomeSell
@@ -7,3 +7,9 @@ api-version: '1.21.11'
 load: POSTWORLD
 
 authors: [ Lyric/Fusezion ]
+
+dependencies:
+  server:
+    Kotlin4Bukkit:
+      required: true
+      load: BEFORE
