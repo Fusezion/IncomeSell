@@ -1,9 +1,9 @@
 package dev.lyric.income.sell.listeners
 
+import dev.lyric.config.ConfigManager
 import dev.lyric.income.sell.IncomeSell
 import dev.lyric.income.sell.api.IncomeSellAPI
-import dev.lyric.income.sell.config.ConfigManager
-import dev.lyric.income.sell.config.data.SellwandConfig
+import dev.lyric.income.sell.config.SellwandConfig
 import dev.lyric.income.sell.messages.MessageTagResolvers
 import dev.lyric.income.sell.messages.Messages
 import dev.lyric.income.sell.utils.PDCKey
@@ -24,6 +24,8 @@ class SellwandUseListener : Listener {
 
 	val messages: Messages
 		get() = IncomeSell.messages
+	val configManager: ConfigManager
+		get() = IncomeSell.configManager
 
 	@EventHandler
 	fun onRightClick(event: PlayerInteractEvent) {
@@ -40,8 +42,7 @@ class SellwandUseListener : Listener {
 
 		val sellWandPDC = sellwandItem.persistentDataContainer.get(PDCKey.sellwand, PersistentDataType.TAG_CONTAINER)!!
 		val type = sellWandPDC.get(PDCKey.type, PersistentDataType.STRING)!!
-		if (!ConfigManager.isValidFolderConfigChild("sellwands/$type")) return
-		val sellwandConfig = ConfigManager.getConfigFromFolder<SellwandConfig>("sellwands", type)
+		val sellwandConfig = configManager.getFolder<SellwandConfig>("sellwands", type) ?: return
 
 		val sellResult = IncomeSellAPI.createEmptySellResult()
 		sellResult.recordInventoryTransaction(containerInventory)

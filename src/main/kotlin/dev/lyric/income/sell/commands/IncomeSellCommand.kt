@@ -4,11 +4,11 @@ import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.tree.LiteralCommandNode
+import dev.lyric.config.ConfigManager
+import dev.lyric.config.source.FolderConfigSource
 import dev.lyric.income.sell.IncomeSell
 import dev.lyric.income.sell.commands.argument.SellwandArgumentType
-import dev.lyric.income.sell.config.ConfigManager
-import dev.lyric.income.sell.config.data.SellwandConfig
-import dev.lyric.income.sell.config.entry.FolderConfigEntry
+import dev.lyric.income.sell.config.SellwandConfig
 import dev.lyric.income.sell.messages.MessageTagResolvers
 import dev.lyric.income.sell.messages.Messages
 import dev.lyric.income.sell.utils.PDCKey
@@ -27,11 +27,16 @@ import java.text.NumberFormat
 
 object IncomeSellCommand {
 
+	val configManager: ConfigManager
+		get() = IncomeSell.configManager
 	val integerFormater: NumberFormat = NumberFormat.getIntegerInstance()
-	val sellwandConfigEntry: FolderConfigEntry<SellwandConfig>
-		get() = ConfigManager.getFolderConfig("sellwands")
-	val messages: Messages
+	val sellwandConfigSource: FolderConfigSource<SellwandConfig>
+		get() = configManager.getFolderSource<SellwandConfig>("sellwands")!!
+	var messages: Messages
 		get() = IncomeSell.messages
+		set(value) {
+			IncomeSell.messages = value
+		}
 
 	fun createCommand(): LiteralCommandNode<CommandSourceStack> {
 		return Commands.literal("incomesell")
@@ -41,7 +46,8 @@ object IncomeSellCommand {
 					.executes { context ->
 						val source = context.source
 						val executor = (source.executor ?: source.executor) ?: return@executes Command.SINGLE_SUCCESS
-						ConfigManager.loadAllConfigEntries()
+						configManager.loadAll()
+						messages = Messages(configManager.getFile("messages")!!)
 						executor.sendMessage { messages.resolve { command.reload } }
 						return@executes Command.SINGLE_SUCCESS
 					}
@@ -53,7 +59,7 @@ object IncomeSellCommand {
 							.then(
 								Commands.argument("type", SellwandArgumentType())
 									.suggests { _, builder ->
-										for (fileKey in sellwandConfigEntry.getFileKeys()) {
+										for (fileKey in sellwandConfigSource.getKeys()) {
 											builder.suggest(fileKey)
 										}
 										return@suggests builder.buildFuture()

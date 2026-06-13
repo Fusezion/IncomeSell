@@ -1,6 +1,6 @@
 package dev.lyric.income.sell.messages
 
-import dev.lyric.income.sell.config.data.MessageConfig
+import dev.lyric.income.sell.config.MessageConfig
 import dev.lyric.income.sell.utils.AdventureUtils.miniMessage
 import net.kyori.adventure.pointer.Pointered
 import net.kyori.adventure.text.Component
