@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package dev.lyric.income.sell.config.data
+package dev.lyric.income.sell.config
 
 import dev.lyric.income.sell.config.serializers.BukkitColorSerializer
 import dev.lyric.income.sell.config.serializers.EnchantmentSerializer
@@ -24,8 +24,7 @@ import org.bukkit.Color
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
-import java.util.*
-import kotlin.math.max
+import java.util.UUID
 
 @Serializable
 data class ItemStackConfig(

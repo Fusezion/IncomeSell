@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-package dev.lyric.income.sell.config.data
+package dev.lyric.income.sell.config
 
 import dev.lyric.income.sell.utils.AdventureUtils.miniMessage
 import io.papermc.paper.datacomponent.DataComponentTypes

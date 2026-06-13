@@ -1,4 +1,4 @@
-package dev.lyric.income.sell.config.data
+package dev.lyric.income.sell.config
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
