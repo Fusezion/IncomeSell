@@ -12,8 +12,8 @@ repositories {
 
 dependencies {
 	compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-	compileOnly("net.mamoe.yamlkt:yamlkt:0.13.0")
-	compileOnly("com.github.Fusezion:Kotlin4Bukkit:1.0.0")
+	implementation(kotlin("stdlib"))
+	implementation("net.mamoe.yamlkt:yamlkt:0.13.0")
 	implementation("com.github.Fusezion:ConfigSerialization:1.1.2")
 }
 
