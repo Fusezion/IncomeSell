@@ -1,5 +1,6 @@
 package dev.lyric.income.sell.api
 
+import dev.lyric.income.economy.EconomyProviderRegistry
 import dev.lyric.income.sell.api.events.PlayerSellEvent
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -98,10 +99,10 @@ object IncomeSellAPI {
 		for ((providerKey, amount) in validTransactions) {
 			if (!isValidProvider(providerKey)) continue
 			val (providerId, argument) = getProviderAndArgument(providerKey)
-			val provider = SellProviderRegistry.getProvider(providerId) ?: continue
+			val provider = EconomyProviderRegistry.get(providerId) ?: continue
 			val multiplier = sellResult.calculateMultiplier(providerKey)
 			val finalAmount = amount * multiplier
-			provider.handleSell(player, argument, finalAmount)
+			provider.deposit(player, finalAmount, argument)
 			if (!paidOutAnything) paidOutAnything = true
 		}
 		return paidOutAnything
@@ -118,8 +119,8 @@ object IncomeSellAPI {
 	@JvmStatic
 	internal fun isValidProvider(providerKey: String): Boolean {
 		val (providerId, argument) = getProviderAndArgument(providerKey)
-		val provider = SellProviderRegistry.getProvider(providerId) ?: return false
-		return argument == null || provider.isValidArgument(argument)
+		val provider = EconomyProviderRegistry.get(providerId) ?: return false
+		return argument == null || provider.validateArgument(argument)
 	}
 
 }

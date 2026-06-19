@@ -1,9 +1,9 @@
 package dev.lyric.income.sell.messages
 
+import dev.lyric.income.economy.EconomyProviderRegistry
 import dev.lyric.income.sell.IncomeSell
 import dev.lyric.income.sell.api.IncomeSellAPI
 import dev.lyric.income.sell.api.IncomeSellAPI.getProviderAndArgument
-import dev.lyric.income.sell.api.SellProviderRegistry
 import dev.lyric.income.sell.api.SellResult
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.HoverEvent
@@ -14,13 +14,6 @@ import org.bukkit.inventory.ItemStack
 import java.text.NumberFormat
 
 object MessageTagResolvers {
-
-	/*
-	<total_items>, <item_amount>, <multiplier>
-	<currency_breakdown_short>, <currency_breakdown>
-	<breakdown>
-	<item_name>, <display_name>
-	 */
 
 	fun numberFormat(key: String, amount: Number) = Formatter.number(key, amount)
 
@@ -33,9 +26,9 @@ object MessageTagResolvers {
 		val mappedCurrencies = sellResult.getMergedTransactions().mapNotNull { (providerKey, amount) ->
 			if (!IncomeSellAPI.isValidProvider(providerKey)) return@mapNotNull null
 			val (providerId, argument) = getProviderAndArgument(providerKey)
-			val provider = SellProviderRegistry.getProvider(providerId) ?: return@mapNotNull null
+			val provider = EconomyProviderRegistry.get(providerId) ?: return@mapNotNull null
 			val multiplier = sellResult.calculateMultiplier(providerKey)
-			return@mapNotNull provider.formatAmount((amount * multiplier), argument, numberStyle)
+			return@mapNotNull provider.formatCurrency((amount * multiplier), argument, numberStyle)
 		}.toList()
 		return Placeholder.parsed(key, mappedCurrencies.reduce { acc, string -> "$acc $string" })
 	}
@@ -51,8 +44,8 @@ object MessageTagResolvers {
 			val multiplier = sellResult.calculateMultiplier(providerKey)
 			if (multiplier == 0f) return@mapNotNull null
 			val (providerId, argument) = getProviderAndArgument(providerKey)
-			val provider = SellProviderRegistry.getProvider(providerId) ?: return@mapNotNull null
-			return@mapNotNull provider.formatAmount((amount * multiplier), argument, numberStyle)
+			val provider = EconomyProviderRegistry.get(providerId) ?: return@mapNotNull null
+			return@mapNotNull provider.formatCurrency((amount * multiplier), argument, numberStyle)
 		}.toList()
 		return Placeholder.parsed(key, mappedCurrencies.reduce { acc, string -> "$acc $string" })
 	}
@@ -79,7 +72,7 @@ object MessageTagResolvers {
 				getMultiplierMap(sellResult.getProviderMultipliers(), sellResult.getProviderSpecificMultipliers())
 			if (multiplierMap.isNotEmpty()) {
 				for ((providerId, argumentMap) in multiplierMap) {
-					val provider = SellProviderRegistry.getProvider(providerId) ?: continue
+					val provider = EconomyProviderRegistry.get(providerId) ?: continue
 					val providerDisplayName = stringFormat("display_name", provider.displayName)
 					breakdownComponent = if (argumentMap.containsKey(null)) {
 						breakdownComponent.appendNewline()

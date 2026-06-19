@@ -1,5 +1,6 @@
 package dev.lyric.income.sell.api
 
+import dev.lyric.income.economy.EconomyProviderRegistry
 import dev.lyric.income.sell.api.IncomeSellAPI.getProviderAndArgument
 import dev.lyric.income.sell.api.IncomeSellAPI.isValidProvider
 import net.kyori.adventure.text.Component
@@ -76,8 +77,6 @@ class SellResult {
 	fun editProviderMultiplier(providerKey: String, multiplier: Float, overwrite: Boolean = false) {
 		if (!isValidProvider(providerKey)) return
 		val (providerId, argument) = getProviderAndArgument(providerKey)
-		val provider = SellProviderRegistry.getProvider(providerId) ?: return
-		if (!provider.acceptsMultipliers(argument)) return
 		if (argument == null) {
 			if (overwrite) {
 				providerMultipliers[providerId] = multiplier
@@ -95,16 +94,9 @@ class SellResult {
 
 	internal fun calculateMultiplier(providerKey: String): Float {
 		if (!isValidProvider(providerKey)) return 0f
-		val (providerId, argument) = getProviderAndArgument(providerKey)
-		val provider = SellProviderRegistry.getProvider(providerId) ?: return 0f
-		if (!provider.acceptsMultipliers(argument)) return 0f
-		var multiplier = 1f
-		if (provider.acceptsGlobalMultiplier())
-			multiplier *= globalMultiplier
-		if (provider.acceptsMultipliers(null))
-			multiplier *= providerMultipliers.getOrDefault(providerKey, 1f)
-		if (argument != null && provider.acceptsMultipliers(argument))
-			multiplier *= providerSpecificMultipliers.getOrDefault(providerKey, 1f)
+		var multiplier = globalMultiplier
+		multiplier *= providerMultipliers.getOrDefault(providerKey, 1f)
+		multiplier *= providerSpecificMultipliers.getOrDefault(providerKey, 1f)
 		return multiplier
 	}
 
