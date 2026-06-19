@@ -2,6 +2,7 @@ plugins {
 	kotlin("jvm") version "2.4.0"
 	kotlin("plugin.serialization") version "2.4.0"
 	id("com.gradleup.shadow") version "9.4.1"
+	id("maven-publish")
 }
 
 repositories {
@@ -42,6 +43,14 @@ tasks {
 		val props = mapOf("version" to version)
 		filesMatching("paper-plugin.yml") {
 			expand(props)
+		}
+	}
+}
+
+publishing {
+	publications {
+		create<MavenPublication>("maven") {
+			from(components["java"])
 		}
 	}
 }
