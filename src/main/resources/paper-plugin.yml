@@ -5,3 +5,8 @@ main: dev.lyric.income.sell.IncomeSell
 api-version: '1.21.11'
 load: POSTWORLD
 authors: [ Lyric/Fusezion ]
+dependencies:
+  server:
+    IncomeEconomy:
+      load: BEFORE
+      required: true
