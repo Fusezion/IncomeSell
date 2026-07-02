@@ -1,7 +1,7 @@
 name: IncomeSell
 description: 'Main sell plugin for the IncomeMC Generator server'
 version: '${version}'
-main: dev.lyric.income.sell.IncomeSell
+main: dev.lyric.income.sell.IncomeSellPlugin
 api-version: '1.21.11'
 load: POSTWORLD
 authors: [ Lyric/Fusezion ]

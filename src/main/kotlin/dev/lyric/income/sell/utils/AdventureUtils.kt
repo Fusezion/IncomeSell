@@ -42,13 +42,13 @@ object AdventureUtils {
 	private val jsonSerializer = GsonComponentSerializer.gson()
 	private val plainSerializer = PlainTextComponentSerializer.plainText()
 
-	fun String.miniMessage() = miniMessage.deserialize(this)
+	fun String.minimessage() = miniMessage.deserialize(this)
 
-	fun String.miniMessage(vararg resolvers: TagResolver) = miniMessage.deserialize(this, *resolvers)
+	fun String.minimessage(vararg resolvers: TagResolver) = miniMessage.deserialize(this, *resolvers)
 
-	fun String.miniMessage(pointered: Pointered) = miniMessage.deserialize(this, pointered)
+	fun String.minimessage(pointered: Pointered) = miniMessage.deserialize(this, pointered)
 
-	fun String.miniMessage(pointered: Pointered, vararg resolvers: TagResolver) = miniMessage.deserialize(this, pointered, *resolvers)
+	fun String.minimessage(pointered: Pointered, vararg resolvers: TagResolver) = miniMessage.deserialize(this, pointered, *resolvers)
 
 	fun String.component() = Component.text(this)
 

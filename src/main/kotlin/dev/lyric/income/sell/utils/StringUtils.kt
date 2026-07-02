@@ -1,6 +1,5 @@
 package dev.lyric.income.sell.utils
 
-
 object StringUtils {
 
 	private val tinyCapsMap = mapOf(
