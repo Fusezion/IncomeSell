@@ -1,21 +1,16 @@
-@file:Suppress("UnstableApiUsage")
-
-package dev.lyric.income.sell.config
+package dev.lyric.income.sell.config.data
 
 import dev.lyric.income.sell.config.serializers.BukkitColorSerializer
+import dev.lyric.income.sell.config.serializers.DataComponentTypeSerializer
 import dev.lyric.income.sell.config.serializers.EnchantmentSerializer
 import dev.lyric.income.sell.config.serializers.ItemTypeSerializer
 import dev.lyric.income.sell.config.serializers.KeySerializer
-import dev.lyric.income.sell.config.serializers.UUIDSerializer
-import dev.lyric.income.sell.utils.AdventureUtils.miniMessage
+import dev.lyric.income.sell.utils.AdventureUtils.minimessage
 import io.papermc.paper.datacomponent.DataComponentType
 import io.papermc.paper.datacomponent.DataComponentTypes
-import io.papermc.paper.datacomponent.item.CustomModelData
 import io.papermc.paper.datacomponent.item.DyedItemColor
 import io.papermc.paper.datacomponent.item.ItemEnchantments
 import io.papermc.paper.datacomponent.item.ItemLore
-import io.papermc.paper.datacomponent.item.ResolvableProfile
-import io.papermc.paper.datacomponent.item.TooltipDisplay
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.kyori.adventure.key.Key
@@ -24,7 +19,6 @@ import org.bukkit.Color
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.ItemType
-import java.util.UUID
 
 @Serializable
 data class ItemStackConfig(
@@ -43,17 +37,17 @@ data class ItemStackConfig(
 	val profile: ResolvableProfileConfig? = null,
 	@SerialName("tooltip-display") val tooltipDisplay: TooltipDisplayConfig? = null,
 	@SerialName("custom-model-data") val customModelData: CustomModelDataConfig? = null,
-	@SerialName("removed-components") val removedComponents: List<DataComponentType> = emptyList()
+	@SerialName("removed-components") val removedComponents: List<@Serializable(with = DataComponentTypeSerializer::class) DataComponentType> = emptyList()
 ) {
 
-	fun createItemStack(resolvers: Array<TagResolver>): ItemStack {
+	fun createItemStack(resolvers: Array<TagResolver> = emptyArray()): ItemStack {
 		val itemStack = material.createItemStack(amount)
 		if (customName.isNullOrBlank().not())
-			itemStack.setData(DataComponentTypes.CUSTOM_NAME, customName.miniMessage(*resolvers))
+			itemStack.setData(DataComponentTypes.CUSTOM_NAME, customName.minimessage(*resolvers))
 		if (itemName.isNullOrBlank().not())
-			itemStack.setData(DataComponentTypes.ITEM_NAME, itemName.miniMessage(*resolvers))
+			itemStack.setData(DataComponentTypes.ITEM_NAME, itemName.minimessage(*resolvers))
 		if (lore.isNotEmpty())
-			itemStack.setData(DataComponentTypes.LORE, ItemLore.lore(lore.map { it.miniMessage(*resolvers) }))
+			itemStack.setData(DataComponentTypes.LORE, ItemLore.lore(lore.map { it.minimessage(*resolvers) }))
 		if (unbreakable)
 			itemStack.setData(DataComponentTypes.UNBREAKABLE)
 		if (enchantmentGlintOverride != null)
@@ -79,38 +73,4 @@ data class ItemStackConfig(
 		return itemStack
 	}
 
-}
-
-@Serializable
-data class ResolvableProfileConfig(
-	val name: String? = null,
-	@Serializable(with = UUIDSerializer::class) val uuid: UUID? = null,
-) {
-	fun toResolvableProfile(): ResolvableProfile {
-		return ResolvableProfile.resolvableProfile().name(name).uuid(uuid).build()
-	}
-}
-
-@Serializable
-data class CustomModelDataConfig(
-	val colors: List<@Serializable(BukkitColorSerializer::class) Color> = emptyList(),
-	val strings: List<String> = emptyList(),
-	val flags: List<Boolean> = emptyList(),
-	val floats: List<Float> = emptyList()
-) {
-	fun toCustomModelData(): CustomModelData {
-		return CustomModelData.customModelData().addColors(colors).addStrings(strings).addFlags(flags).addFloats(floats)
-			.build()
-	}
-}
-
-@Serializable
-data class TooltipDisplayConfig(
-	@SerialName("hide-tooltip") val hideTooltip: Boolean = false,
-	@SerialName("hidden-components") val hiddenComponents: List<DataComponentType> = emptyList()
-) {
-	fun toTooltipDisplay(): TooltipDisplay {
-		return TooltipDisplay.tooltipDisplay().hideTooltip(hideTooltip).hiddenComponents(hiddenComponents.toSet())
-			.build()
-	}
 }
