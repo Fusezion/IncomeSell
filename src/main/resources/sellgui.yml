@@ -1,6 +1,6 @@
-inventory-name: "Place in items to sell!"
+title: "Place in items to sell!"
 
-shape:
+layout:
   - "         "
   - "         "
   - "         "
@@ -8,7 +8,9 @@ shape:
   - "         "
   - "----@----"
 
-sell-action-slot: '@'
+sell-action-slots:
+  sell-action: '@'
+  sellable-slot: ' '
 
 items:
   '-':
