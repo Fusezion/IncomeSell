@@ -66,4 +66,6 @@ class SellReport {
 		this.sellReportState = SellReportState.PROCESSED
 	}
 
+	fun isCompleted() = this.sellReportState == SellReportState.PROCESSED
+
 }

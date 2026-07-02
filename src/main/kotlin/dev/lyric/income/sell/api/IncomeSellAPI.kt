@@ -144,6 +144,7 @@ object IncomeSellAPI {
 	fun createSellReport(): SellReport = SellReport()
 
 	fun processSell(player: Player, sellReport: SellReport): Boolean {
+		check(!sellReport.isCompleted()) { "This sell report has already been completed and cannot be processed again" }
 		val prePlayerSell = PrePlayerSellEvent(player, sellReport).callEvent()
 		if (!prePlayerSell) return false
 		MultiplierProviderRegistry.getProviders().forEach { multiplierProvider ->
