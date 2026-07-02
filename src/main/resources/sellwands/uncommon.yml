@@ -1,27 +1,25 @@
 multiplier: 1
 identifier: uncommon
 
-unlimited-uses-item:
-  max-stack-size: 1
+unlimited-use-item:
   material: "minecraft:blaze_rod"
   name: "&a<tinycaps:'uncommon sellwand'>"
   lore:
     - "&8<tinycaps:'sell wand'>"
     - ""
     - "&a| &f<tinycaps:'tier'> &a2"
-    - "&a| &f<tinycaps:'multiplier'> &a<multi>x"
+    - "&a| &f<tinycaps:'multiplier'> &a<multiplier>x"
     - ""
     - "&a&lRIGHT CLICK A CONTAINER"
 
-limited-uses-item:
-  max-stack-size: 1
+limited-use-item:
   material: "minecraft:blaze_rod"
   name: "&a<tinycaps:'uncommon sellwand'>"
   lore:
     - "&8<tinycaps:'sell wand'>"
     - ""
     - "&a| &f<tinycaps:'tier'> &a2"
-    - "&a| &f<tinycaps:'multiplier'> &a<multi>x"
+    - "&a| &f<tinycaps:'multiplier'> &a<multiplier>x"
     - "&a| &f<tinycaps:'uses'> &a<uses>/<max_uses>"
     - ""
     - "&a&lRIGHT CLICK A CONTAINER"
